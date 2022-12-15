@@ -79,12 +79,12 @@ io.on('connection', (socket) => {
             )
             system.set(obj.roomID, list)
         } else { 
-            if (room.length == 1) { //滿人 開始通話
+            if (room.length == 1) { //開始通話
                 room.push(
                     new myClass.User(obj.userName, socket.id)
                 )
-                socket.emit("startCall", { isCaller: false })
-                io.to(room[0].socketID).emit("startCall", { isCaller: true })
+                socket.emit("startCall", { isCaller: false , targetSocketID:  room[0].socketID})
+                io.to(room[0].socketID).emit("startCall", { isCaller: true, targetSocketID: socket.id})
                 
             } else {
                 socket.emit("error", {errMsg: "已滿人"})
@@ -92,9 +92,50 @@ io.on('connection', (socket) => {
         }
         console.log(system)
     })
+
+    socket.on("offer", (obj) => {
+        console.log(obj)
+        
+        let room = system.get(obj.roomID)
+        if (room != undefined) {
+            if (room.find((it) => it.socketID == obj.targetSocketID)) {
+                io.to(obj.targetSocketID).emit("offer", {
+                    sdp: obj.sdp,
+                    type: obj.type
+                })
+            }
+        }
+    })
+
+    socket.on("answer", (obj) => {
+        console.log(obj)
+        let room = system.get(obj.roomID)
+        if (room != undefined) {
+            if (room.find((it) => it.socketID == obj.targetSocketID)) {
+                io.to(obj.targetSocketID).emit("answer", {
+                    sdp: obj.sdp,
+                    type: obj.type
+                })
+            }
+        }
+    })
+
+    socket.on("ice_candidates", (obj) => {
+        console.log(obj)
+        let room = system.get(obj.roomID)
+        if (room != undefined) {
+            if (room.find((it) => it.socketID == obj.targetSocketID)) {
+                io.to(obj.targetSocketID).emit("ice_candidates", {
+                    sdpMid: obj.sdpMid,
+                    sdpMLineIndex: obj.sdpMLineIndex,
+                    candidateSdp: obj.candidateSdp
+                })
+            }
+        }
+    })
     
     socket.on("endCall", (obj) => {
-        console.log(obj);
+        console.log(obj)
         let room = system.get(obj.roomID)
         if (room != undefined) {
             if (room.length > 1) {

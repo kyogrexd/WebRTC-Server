@@ -71,23 +71,36 @@ io.on('connection', (socket) => {
     socket.emit("connected",{ socketID: socket.id });
 
     socket.on("joinRoom", (obj) => {
+        console.log("[joinRoom]")
+        console.log(obj)
         let room = system.get(obj.roomID)
-        if (room == undefined) {
+        if (room == undefined) { //Caller 創建房間
             let list = []
             list.push(
                 new myClass.User(obj.userName, socket.id)
             )
-            system.set(obj.roomID, list)
+            let roomID = "ChatRoom " + (system.size + 1)
+            system.set(roomID, list)
+
+            socket.emit("checkRoomID", {roomID: roomID})
         } else { 
-            if (room.length == 1) { //開始通話
+            if (room.length == 1) { //Callee 進入房間 開始通話
                 room.push(
                     new myClass.User(obj.userName, socket.id)
                 )
-                socket.emit("startCall", { isCaller: false , targetSocketID:  room[0].socketID})
-                io.to(room[0].socketID).emit("startCall", { isCaller: true, targetSocketID: socket.id})
+                socket.emit("startCall", { 
+                    isCaller: false, 
+                    targetSocketID:  room[0].socketID, 
+                    targetUserName: room[0].userName
+                })
+                io.to(room[0].socketID).emit("startCall", { 
+                    isCaller: true, 
+                    targetSocketID: socket.id,
+                    targetUserName: obj.userName
+                })
                 
             } else {
-                socket.emit("error", {errMsg: "已滿人"})
+                socket.emit("error", {errMsg: "Full"})
             }
         }
         console.log(system)
@@ -135,6 +148,7 @@ io.on('connection', (socket) => {
     })
     
     socket.on("endCall", (obj) => {
+        console.log("[endCall]")
         console.log(obj)
         let room = system.get(obj.roomID)
         if (room != undefined) {

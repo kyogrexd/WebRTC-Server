@@ -41,24 +41,6 @@ app.get('/api/roomInfo', (req, res) => {
     })
 })
 
-// let list = []
-// list.push(new myClass.User("UserA", "123"))
-// system.set("Chatroom 1", list)
-
-// let room = system.get("Chatroom 1")
-
-// room.push(new myClass.User("UserB", "456"))
-
-
-// if (room != undefined) {
-//     if (room.length > 1) {
-//         let del = room.filter((it) => it.socketID != "123")
-//         system.set("Chatroom 1", del)
-//         console.log(system)
-//         console.log(room[0])
-//     }
-// }
-
 /**
  * socket 事件
  */
@@ -79,7 +61,7 @@ io.on('connection', (socket) => {
             list.push(
                 new myClass.User(obj.userName, socket.id)
             )
-            let roomID = "ChatRoom " + (system.size + 1)
+            let roomID = uuidv4()
             system.set(roomID, list)
 
             socket.emit("checkRoomID", {roomID: roomID})
@@ -107,6 +89,7 @@ io.on('connection', (socket) => {
     })
 
     socket.on("offer", (obj) => {
+        console.log("[offer]")
         console.log(obj)
         
         let room = system.get(obj.roomID)
@@ -121,6 +104,7 @@ io.on('connection', (socket) => {
     })
 
     socket.on("answer", (obj) => {
+        console.log("[answer]")
         console.log(obj)
         let room = system.get(obj.roomID)
         if (room != undefined) {
@@ -134,6 +118,7 @@ io.on('connection', (socket) => {
     })
 
     socket.on("ice_candidates", (obj) => {
+        console.log("[ice_candidates]")
         console.log(obj)
         let room = system.get(obj.roomID)
         if (room != undefined) {

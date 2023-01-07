@@ -42,6 +42,25 @@ app.get('/api/roomInfo', (req, res) => {
 })
 
 /**
+ * 每30秒檢查使用者是否還在線配對中
+ */
+const schedule = require("node-schedule");
+schedule.scheduleJob("*/10 * * * * *", function () {
+  console.log("schedule done!!!");
+
+  let now = Date.now();
+  let temp = new Map()
+  for (let [roomID, value] of system) {
+    value = value.filter((it) => Math.abs(now - it.refreshTime) < 10000 )//30秒
+
+    system.set(roomID, value)
+  }
+
+  console.log(system)
+
+});
+
+/**
  * socket 事件
  */
 
@@ -52,6 +71,19 @@ io.on('connection', (socket) => {
 
     socket.emit("connected",{ socketID: socket.id });
 
+    /**
+   * 前端每5秒發送一次，更新時間
+   */
+    socket.on("schedule_pairing_check", (obj) => {
+        let refreshTime = Date.now()
+        let room = system.get(obj.roomID)
+        if (room == undefined) return
+
+        let info = room.find((it) => it.socketID == obj.socketID)
+        if (info) info.refreshTime = refreshTime;
+
+    });
+
     socket.on("joinRoom", (obj) => {
         console.log("[joinRoom]")
         console.log(obj)
@@ -59,7 +91,7 @@ io.on('connection', (socket) => {
         if (room == undefined) { //Caller 創建房間
             let list = []
             list.push(
-                new myClass.User(obj.userName, socket.id)
+                new myClass.User(obj.userName, socket.id, 0)
             )
             let roomID = uuidv4()
             system.set(roomID, list)
@@ -68,8 +100,10 @@ io.on('connection', (socket) => {
         } else { 
             if (room.length == 1) { //Callee 進入房間 開始通話
                 room.push(
-                    new myClass.User(obj.userName, socket.id)
+                    new myClass.User(obj.userName, socket.id, 0)
                 )
+
+                socket.emit("checkRoomID", {roomID: obj.roomID})
                 socket.emit("startCall", { 
                     isCaller: false, 
                     targetSocketID:  room[0].socketID, 

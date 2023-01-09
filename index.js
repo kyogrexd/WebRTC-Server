@@ -45,13 +45,13 @@ app.get('/api/roomInfo', (req, res) => {
  * 每30秒檢查使用者是否還在線配對中
  */
 const schedule = require("node-schedule");
-schedule.scheduleJob("*/30 * * * * *", function () {
+schedule.scheduleJob("*/15 * * * * *", function () {
   console.log("schedule done!!!");
 
   let now = Date.now();
   let temp = new Map()
   for (let [roomID, value] of system) {
-    value = value.filter((it) => Math.abs(now - it.refreshTime) < 30000 )//30秒
+    value = value.filter((it) => Math.abs(now - it.refreshTime) < 15000 )//30秒
 
     if (value.length == 0) system.delete(roomID)
     else system.set(roomID, value)

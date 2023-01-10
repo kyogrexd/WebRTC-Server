@@ -51,7 +51,7 @@ schedule.scheduleJob("*/15 * * * * *", function () {
   let now = Date.now();
   let temp = new Map()
   for (let [roomID, value] of system) {
-    value = value.filter((it) => Math.abs(now - it.refreshTime) < 15000 )//30秒
+    value = value.filter((it) => Math.abs(now - it.refreshTime) < 15000 )//15秒
 
     if (value.length == 0) system.delete(roomID)
     else system.set(roomID, value)
@@ -91,9 +91,10 @@ io.on('connection', (socket) => {
         console.log(obj)
         let room = system.get(obj.roomID)
         if (room == undefined) { //Caller 創建房間
+            let refreshTime = Date.now()
             let list = []
             list.push(
-                new myClass.User(obj.userName, socket.id, 0)
+                new myClass.User(obj.userName, socket.id, refreshTime)
             )
             let roomID = uuidv4()
             system.set(roomID, list)
@@ -101,8 +102,9 @@ io.on('connection', (socket) => {
             socket.emit("checkRoomID", {roomID: roomID})
         } else { 
             if (room.length == 1) { //Callee 進入房間 開始通話
+                let refreshTime = Date.now()
                 room.push(
-                    new myClass.User(obj.userName, socket.id, 0)
+                    new myClass.User(obj.userName, socket.id, refreshTime)
                 )
 
                 socket.emit("checkRoomID", {roomID: obj.roomID})

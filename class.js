@@ -6,9 +6,10 @@ class roomUser {
 }
 
 class User {
-    constructor(userName, socketID) {
+    constructor(userName, socketID, refreshTime) {
         this.userName = userName
         this.socketID = socketID
+        this.refreshTime = refreshTime
     }
 }
 
